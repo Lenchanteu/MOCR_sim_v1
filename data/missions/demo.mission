@@ -1,0 +1,27 @@
+{
+    "mission_id": "MOCR-DEMO-001",
+
+    "mission_name": "Orbital Demonstration Flight",
+
+    "vehicle": {
+        "name": "Explorer-1",
+        "type": "orbiter"
+    },
+
+
+    "available_consoles": [
+        "FD",
+        "GNC",
+        "PROP",
+        "COMM"
+    ],
+
+
+    "simulation": {
+
+        "time_scale": 1,
+
+        "failures_enabled": true
+
+    }
+}
