@@ -1,0 +1,9 @@
+What is this project?
+Basically, this is a simulator of the control center at Johnson's space center in Houston, Texas. It is the Houston in "Houston, we've had a problem" (Apollo XIII)
+How do I launch?
+Currently, the program is not able to launch. You can look at the progress in the code, and launch the launcher located at /engine/GUI/launcher.py
+How can I help?
+I am currently looking for checklists that were used in the apollo era by the controllers, and I am also looking for a spacecraft simulator to get the telemetry data.
+If you are an artist, I am also looking for someone that could help me with the visuals. 
+Can I create custom mission files?
+Yes, check out the FORMATS in /docs/DOCUMENTATION, to create your own missions and your own spacecraft. 
