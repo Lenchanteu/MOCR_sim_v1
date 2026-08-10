@@ -1,0 +1,29 @@
+# Protocols 
+## 1. Servers buffer sizes: 
+- Launcher launch protocols [^1] <br>
+  This protocols defines the buffer required for the communication between subprocesses of the launcher.py and main.py
+  1. Test connection
+     1. start: 1b
+     2. type: 1b
+     3. ID: 1b
+     4. Test co message: 1b
+     5. end: 1b <br>
+   This message is sent by both parties, each verifying that codes match. <br>
+   The connection message must be 0x55 for launcher.py and 0xAA for main.py <br>
+   ID is remembered for the next transmissions, the ID of main must be the launcher's ID incremented by 0x01 <br>
+   Types of messages:
+  2. Info sends
+     1. start: 1b
+     2. type: 1b
+     3. ID: 1b
+     4. Message: 2b
+     5. end: 1b <br>
+   types of messages: <br>
+   1. Connection succesfull, waiting for next transmission (0x00 0x01) 
+   <br>All variables: <br>
+   -start: 0x03 <br>
+   -end: 0x00<br>
+   -types:
+      - test connection: 0x01
+      - sending info: 0x02
+  [^1]: This might seem overly complex for a launcher, but it is also testing that the socket, subprocess and threading modules are working completely

@@ -5,4 +5,4 @@ class console():
 
     #global telemetry loader for individual consoles. See documentation for telemetry format
     def load_telemetry(self, console_telem):
-        
+        telem1 = console_telem.telem1
