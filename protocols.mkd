@@ -19,7 +19,11 @@
      4. Message: 2b
      5. end: 1b <br>
    types of messages: <br>
-   1. Connection succesfull, waiting for next transmission (0x00 0x01) 
+   1. Connection succesfull, waiting for next transmission (0x00 0x01)
+   2. Received and acknowledged (0x00 0x02)
+   3. Launcher ready to be started, all checks cleared (0x00 0x03)
+   4. Fatal error (0xAA 0xAA)
+   5. Launcher parameters: (0x01) + parameter code (see main for info)
    <br>All variables: <br>
    -start: 0x03 <br>
    -end: 0x00<br>

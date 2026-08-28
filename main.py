@@ -9,97 +9,89 @@ import threading
 import subprocess
 import socket
 import math
+import sys
+from pathlib import Path
+import engine.library.server as server
 #------------------LAUNCHER------------------
 #threading event definitions
 launcher_ready = threading.Event()
+server_connected = threading.Event()
 #call Launcher
-def server_launcher(param):
+project_dir = Path(__file__).resolve().parent
+def server_launcher(param="None"):
     #variables
     data = b""
+    param_table = {
+        "None": b"\x01"
+    }
+    param_message
     server_co = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_co.bind(("127.0.0.1", 0))
     server_co.listen(10)
 
     port = server_co.getsockname()[1]
-
+    subprocess.Popen(
+        [sys.executable, r"engine/launcher.py", str(port)], cwd=project_dir
+    )
     conn, addr = server_co.accept()
-    server_connected = True
-    while len(data) < 5:
-        buffer = conn.recv(5 - len(data))
-        data += buffer
+    server_connected.set()
+
+    data = server.get_message(conn, 5)
     #decode test data:
-    start = data[0:1]
-    type = data[1:2]
-    id_launcher = data[2:3]
-    message = data[3:4]
-    end = data[4:5]
-    if start != b"\x03":
+    id_launcher, message = server.check_validity(data, server.proto_1, None, conn)
+    if message != b"\x55":     
         conn.close()
-        raise Exception("The start object in the transmission protocol was not correct.")
-    if type != b"\x01":
-        conn.close()
-        raise Exception("Received the wrong message type.")
-    if end != b"\x00":
-        conn.close()
-        raise Exception("The end object in the transmission protocol was not correct.")
-    if message != b"\x55":
-        conn.close()
-        raise Exception("Received an incorrect test message. Transmission is not trustworthy.")
+        raise server.MOCRTransmissionProtocolError("", "message", message, b"\x55")
     #compose test message:
-    start = b"\x03"
-    type = b"\x01"
-    id_main = bytes([(id_launcher[0] + 1) & 0xFF])
-    message = b"\xAA"
-    end = b"\x00"
-    data = start + type + id_main + message + end
-    conn.sendall(data)
-    data = b"" #reset data
-    #receive info message
-    while len(data) < 6:
-        buffer = conn.recv(6)
-        data += buffer
+    id = bytes([(id_launcher[0] + 1) & 0xFF])
+
+    server.send_message(server.proto_1, id, b"\xAA", conn)
+    
+    data = server.get_message(conn, 6)
     # decode data
-    start = data[0:1]
-    type = data[1:2]
-    cid_launcher = data[2:3]
-    message = data[3:5]
-    end = data[5:6]
-    if start != b"\x03":
-        conn.close()
-        raise Exception("The start object in the transmission protocol was not correct.")
-    if type != b"\x02":
-        conn.close()
-        raise Exception("Received the wrong message type.")
-    if end != b"\x00":
-        conn.close()
-        raise Exception("The end object in the transmission protocol was not correct.")
-    if cid_launcher != id_launcher:
-        conn.close()
-        raise Exception("The launcher ID has been changed. Connection not trustworthy")
-    if message == b"\x00\x01":
-        print("Connection successful, ready to send info")
-        start = b"\x03"
-        type = b"\x02"
-        if param == None:
-            message = b"\x00\x02"
-        end = b"\x00"
-        data = start + type + id_main + message + end
-        conn.sendall(data)
-    else:
+    message = server.check_validity(data, server.proto_2, id_launcher, conn)
+    if message != b"\x00\x01":
         conn.close()
         raise Exception(f"Unexpected message received: {message}")
     
+    server.send_message(server.proto_2, id, b"\x00\x02", conn)
+
+
+    
+    message = None
+    while message != b"\x00\x03":
+        data = server.get_message(conn, 6)
+        message = server.check_validity(data, server.proto_2, id_launcher, conn)
+
+        server.send_message(server.proto_2, id, b"\x00\x02", conn)
+        if message == b"\xAA\xAA":
+            conn.close()
+            raise Exception("A fatal error occured. No more info")
+        data = server.get_message(conn, 6)
+    message = b"\x01" + param_table[param] 
+    server.send_message(server.proto_2, id, message, conn)
+
+    data = server.get_message(conn, 6)
+    message = server.check_validity(data, server.proto_2, id_launcher, conn)
+    if message == b"\xAA\xAA":
+        conn.close()
+        raise Exception("A fatal error occured. No more info")
+    elif message != b"\x00\x02":
+        conn.close()
+        raise Exception(f"Unexpected message received: {message}")
+
+    server.send_message(server.proto_2, id, b"\xFF\xFF", conn)
     launcher_ready.set()
+    print("launcher launched")
+    conn.close()
+    quit(0)
+            
 def launch(param):
     available_param = ["None"]
     if param not in available_param:
         raise Exception("Parameter %(param)s not available. Please restart with correct arguments" % {
             "param": param
         })
-    param_table = {
-        "None": None
-    }
-    param_func = param_table[param]
     layout = [[sg.Text("Getting everything ready", text_color="green", background_color="black")],
         [sg.Graph(
             canvas_size=(100, 100),
@@ -113,7 +105,7 @@ def launch(param):
     angle = 0
     arc_length = 1
     arc_decorinc = True
-    server_thread = threading.Thread(target=server_launcher)
+    server_thread = threading.Thread(target=server_launcher, args=(param,))
     server_thread.start()
     while True:
         event, values = window.read(timeout=50)
@@ -156,13 +148,7 @@ def launch(param):
             arc_decorinc = False 
         if arc_length < 0:
             arc_decorinc = True 
-        if launcher_ready.is_set():
-            if 
         
-
-        
-        
-
     window.close()
 
 if __name__ == "__main__":
